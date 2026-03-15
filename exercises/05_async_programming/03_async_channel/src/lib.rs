@@ -19,7 +19,24 @@ pub async fn producer_consumer(items: Vec<String>) -> Vec<String> {
     // TODO: Spawn producer task: iterate through items, send each one
     // TODO: Spawn consumer task: loop recv until channel closes, collect results
     // TODO: Wait for consumer to complete and return results
-    todo!()
+    let (tx, mut rx) = mpsc::channel::<String>(5);
+
+    let producer = tokio::spawn(async move {
+        for s in items {
+            tx.send(s).await.unwrap();
+        }
+    });
+
+    let consumer = tokio::spawn(async move {
+        let mut results = Vec::new();
+        while let Some(item) = rx.recv().await {
+            results.push(item);
+        }
+        results 
+    });
+
+    producer.await.unwrap();
+    consumer.await.unwrap()
 }
 
 /// Fan‑in pattern: multiple producers, one consumer.
@@ -31,7 +48,29 @@ pub async fn fan_in(n_producers: usize) -> Vec<String> {
     //       Each sends format!("producer {id}: message")
     // TODO: Drop the original sender (important! otherwise channel won't close)
     // TODO: Consumer loops receiving, collects and sorts
-    todo!()
+    let (tx, mut rx) = mpsc::channel::<String>(n_producers);
+
+    // 每个生产者 clone 一份 tx，spawn 后原始 tx 必须 drop
+    for id in 0..n_producers {
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            tx.send(format!("producer {id}: message")).await.unwrap();
+            // tx clone 在这里 drop
+        });
+    }
+
+    // 关键：drop 原始 tx
+    // 否则即使所有生产者都结束了，channel 仍有一个 tx 存活
+    // rx.recv() 永远不会返回 None，消费者死锁
+    drop(tx);
+
+    let mut results = Vec::new();
+    while let Some(msg) = rx.recv().await {
+        results.push(msg);
+    }
+
+    results.sort();
+    results
 }
 
 #[cfg(test)]
