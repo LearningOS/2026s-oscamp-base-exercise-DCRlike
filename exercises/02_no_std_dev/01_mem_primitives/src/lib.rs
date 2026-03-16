@@ -29,7 +29,7 @@ pub unsafe extern "C" fn my_memcpy(dst: *mut u8, src: *const u8, n: usize) -> *m
     // Hint: read bytes from src one by one and write to dst
     unsafe {
         for i in 0..n {
-            *dst.offset(i as isize) = *src.offset(i as isize);
+            *dst.add(i) = *src.add(i);
         }
     }
     dst

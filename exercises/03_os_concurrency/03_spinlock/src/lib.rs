@@ -39,13 +39,21 @@ impl<T> SpinLock<T> {
     ///
     /// # Safety
     /// Caller must ensure `unlock` is called after using the data.
-    pub fn lock(&self) -> &mut T {
-        // TODO
-        while self.locked.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
-            core::hint::spin_loop();
-        }
+    #[deny(clippy::mut_from_ref)]
+    pub fn lock(&mut self) -> &mut T {
         unsafe {
-            &mut *self.data.get()
+            while self
+                .locked
+                .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+                .is_err()
+            {
+                while self.locked.load(Ordering::Relaxed) {
+                    core::hint::spin_loop();
+                }
+            }
+            // SAFETY: We just acquired the lock, so no other thread holds a reference.
+            // The caller is responsible for calling unlock() before this reference is used again.
+            &mut (*self.data.get())
         }
     }
 
@@ -59,15 +67,14 @@ impl<T> SpinLock<T> {
 
     /// Try to acquire lock without spinning.
     /// Returns Some(&mut T) on success, None if lock is busy.
-    pub fn try_lock(&self) -> Option<&mut T> {
-        // TODO: Single compare_exchange attempt
-        if self.locked.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
-            unsafe {
-                return Some(&mut *self.data.get())
-            }
-        }
-        else {
-            None
+    #[deny(clippy::mut_from_ref)]
+    pub fn try_lock(&mut self) -> Option<&mut T> {
+        unsafe {
+        self.locked
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .ok()
+            // SAFETY: compare_exchange succeeded, meaning we are the sole lock holder.
+            .map(|_|  &mut (*self.data.get()) )
         }
     }
 }

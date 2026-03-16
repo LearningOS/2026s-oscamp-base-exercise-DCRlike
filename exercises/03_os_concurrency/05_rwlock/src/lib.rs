@@ -67,11 +67,9 @@ impl<T> RwLock<T> {
             let state = self.state.load(Ordering::Acquire);
             if (state & WRITER_HOLDING) != 0 || (state & WRITER_WAITING) != 0 {
                 core::hint::spin_loop();
-                continue;
             }
             else if (state & READER_MASK) == READER_MASK {
                 core::hint::spin_loop();
-                continue;
             }
             if self.state.compare_exchange(state, state+1, Ordering::AcqRel, Ordering::Acquire).is_ok() {
                 return RwLockReadGuard { lock: self };

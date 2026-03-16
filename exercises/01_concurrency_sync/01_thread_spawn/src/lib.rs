@@ -28,6 +28,7 @@
 //! ## Exercise Structure
 //! 1. **Basic exercises** (`double_in_thread`, `parallel_sum`) – introduce fundamental thread creation.
 //! 2. **Advanced exercises** (`named_sleeper`, `increment_thread_local`, `scoped_slice_sum`, `handle_panic`) – explore additional thread operations.
+//! 
 //! Each function includes a `TODO` comment indicating where you need to write code.
 //! Run `cargo test` to check your implementations.
 
@@ -202,7 +203,7 @@ pub fn named_sleeper(value: i32, ms: u64) -> i32 {
 }
 
 thread_local! {
-    static THREAD_COUNT: RefCell<usize> = RefCell::new(0);
+        static THREAD_COUNT: RefCell<usize> = const {RefCell::new(0)};
 }
 
 /// Use thread‑local storage to count how many times each thread calls `increment`.
