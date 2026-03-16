@@ -14,9 +14,7 @@
 //! - First and second arguments: `a0` (old context), `a1` (new context).
 
 #![cfg(target_arch = "riscv64")]
-#![feature(naked_functions_rustic_abi)]
-
-
+#![feature(naked_functions)]
 /// Saved register state for one task (riscv64). Layout must match the offsets used in the asm below: for one task (riscv64). Layout must match the offsets used in the asm below:
 /// `sp` at 0, `ra` at 8, then `s0`–`s11` at 16, 24, … 104.
 #[repr(C)]
@@ -65,8 +63,8 @@ impl TaskContext {
     /// - Leave `s0`–`s11` zero; they will be loaded on switch.
     pub fn init(&mut self, stack_top: usize, entry: usize) {
         self.ra = entry as u64;
-        self.sp = (stack_top & !(16 - 1)) as u64;
-        
+        // Align stack pointer down to 16-byte boundary.
+        self.sp = (stack_top & !0xF) as u64;
     }
 }
 
@@ -77,40 +75,43 @@ impl TaskContext {
 /// Must be `#[unsafe(naked)]` to prevent the compiler from generating a prologue/epilogue.
 #[unsafe(naked)]
 pub unsafe fn switch_context(old: &mut TaskContext, new: &TaskContext) {
-    core::arch::naked_asm!(
-        "sd sp,  0*8(a0)",
-        "sd ra,  1*8(a0)",
-        "sd s0,  2*8(a0)",
-        "sd s1,  3*8(a0)",
-        "sd s2,  4*8(a0)",
-        "sd s3,  5*8(a0)",
-        "sd s4,  6*8(a0)",
-        "sd s5,  7*8(a0)",
-        "sd s6,  8*8(a0)",
-        "sd s7,  9*8(a0)",
-        "sd s8,  10*8(a0)",
-        "sd s9,  11*8(a0)",
-        "sd s10, 12*8(a0)",
-        "sd s11, 13*8(a0)",
+    naked_asm!(
+        // --- Save current context into *old (a0) ---
+        "sd sp,   0(a0)",
+        "sd ra,   8(a0)",
+        "sd s0,  16(a0)",
+        "sd s1,  24(a0)",
+        "sd s2,  32(a0)",
+        "sd s3,  40(a0)",
+        "sd s4,  48(a0)",
+        "sd s5,  56(a0)",
+        "sd s6,  64(a0)",
+        "sd s7,  72(a0)",
+        "sd s8,  80(a0)",
+        "sd s9,  88(a0)",
+        "sd s10, 96(a0)",
+        "sd s11,104(a0)",
 
-        "ld sp,  0*8(a1)",
-        "ld ra,  1*8(a1)",
-        "ld s0,  2*8(a1)",
-        "ld s1,  3*8(a1)",
-        "ld s2,  4*8(a1)",
-        "ld s3,  5*8(a1)",
-        "ld s4,  6*8(a1)",
-        "ld s5,  7*8(a1)",
-        "ld s6,  8*8(a1)",
-        "ld s7,  9*8(a1)",
-        "ld s8,  10*8(a1)",
-        "ld s9,  11*8(a1)",
-        "ld s10, 12*8(a1)",
-        "ld s11, 13*8(a1)",
+        // --- Load new context from *new (a1) ---
+        "ld sp,   0(a1)",
+        "ld ra,   8(a1)",
+        "ld s0,  16(a1)",
+        "ld s1,  24(a1)",
+        "ld s2,  32(a1)",
+        "ld s3,  40(a1)",
+        "ld s4,  48(a1)",
+        "ld s5,  56(a1)",
+        "ld s6,  64(a1)",
+        "ld s7,  72(a1)",
+        "ld s8,  80(a1)",
+        "ld s9,  88(a1)",
+        "ld s10, 96(a1)",
+        "ld s11,104(a1)",
 
+        // --- Zero out argument registers so new context
+        //     does not accidentally see the old/new pointers ---
         "li a0, 0",
         "li a1, 0",
-
         "ret",
     )
 }
@@ -120,10 +121,12 @@ const STACK_SIZE: usize = 1024 * 64;
 /// Allocate a stack for a coroutine. Returns `(buffer, stack_top)` where `stack_top` is the high address
 /// (stack grows down). The buffer must be kept alive for the lifetime of the context using this stack.
 pub fn alloc_stack() -> (Vec<u8>, usize) {
+    let buf = vec![0u8; STACK_SIZE];
+    // stack_top = one-past-end of the buffer = highest valid address + 1
+    // This is where sp should start (stack grows down from here).
+    let stack_top = buf.as_ptr() as usize + STACK_SIZE;
 
-    let buffer = vec![0u8;STACK_SIZE];
-    let stack_top = (buffer.as_ptr() as usize + STACK_SIZE) & (!15);
-    (buffer, stack_top)
+    (buf, stack_top)
 }
 
 #[cfg(test)]
