@@ -149,7 +149,6 @@ use std::time::Duration;
 // ============================================================================
 // Exercise Functions
 // ============================================================================
-
 /// Multiply each element of a vector by 2 in a new thread, returning the result vector.
 ///
 /// Hint: Use `thread::spawn` and `move` closure.

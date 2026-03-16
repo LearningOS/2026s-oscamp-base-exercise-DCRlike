@@ -23,7 +23,11 @@ pub struct FlagChannel {
     data: AtomicU32,
     ready: AtomicBool,
 }
-
+impl Default for FlagChannel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl FlagChannel {
     pub const fn new() -> Self {
         Self {
@@ -71,7 +75,11 @@ pub struct OnceCell {
     initialized: AtomicBool,
     value: AtomicU32,
 }
-
+impl Default for OnceCell {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl OnceCell {
     pub const fn new() -> Self {
         Self {
@@ -87,7 +95,8 @@ impl OnceCell {
     pub fn init(&self, val: u32) -> bool {
         // TODO: Use compare_exchange to ensure initialization only once
         // Store value on success
-        if self.initialized
+        if self
+            .initialized
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
@@ -102,10 +111,9 @@ impl OnceCell {
     pub fn get(&self) -> Option<u32> {
         // TODO: Check initialized flag, then read value
         if self.initialized.load(Ordering::Acquire) {
-            return Some(self.value.load(Ordering::Relaxed));
-        }
-        else {
-            return None
+            Some(self.value.load(Ordering::Relaxed))
+        } else {
+            None
         }
     }
 }

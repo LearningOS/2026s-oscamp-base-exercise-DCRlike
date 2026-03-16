@@ -26,8 +26,7 @@ impl AtomicCounter {
     /// Hint: use `fetch_add` with `Ordering::Relaxed`
     pub fn increment(&self) -> u64 {
         // TODO
-        let ret = self.value.fetch_add(1, Ordering::Relaxed);
-        ret
+        self.value.fetch_add(1, Ordering::Relaxed)
     }
 
     /// Atomically decrements by 1, returns the value **before** decrement.
@@ -48,7 +47,8 @@ impl AtomicCounter {
     /// Hint: use `compare_exchange` with success ordering `Ordering::AcqRel` and failure ordering `Ordering::Acquire`
     pub fn compare_and_swap(&self, expected: u64, new_val: u64) -> Result<u64, u64> {
         // TODO
-        self.value.compare_exchange(expected, new_val, Ordering::AcqRel, Ordering::Acquire)
+        self.value
+            .compare_exchange(expected, new_val, Ordering::AcqRel, Ordering::Acquire)
     }
 
     /// Multiply the value atomically using a CAS loop.
@@ -67,11 +67,9 @@ impl AtomicCounter {
             let new = current * multiplier;
             match self.compare_and_swap(current, new) {
                 Ok(num) => return num,
-                Err(_) => continue
+                Err(_) => continue,
             }
         }
-        
-
     }
 }
 

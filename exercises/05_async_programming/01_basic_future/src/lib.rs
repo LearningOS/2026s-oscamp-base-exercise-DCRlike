@@ -54,6 +54,9 @@ impl YieldOnce {
     pub fn new() -> Self {
         Self { yielded: false }
     }
+    pub fn default() -> Self {
+        Self::new()
+    }
 }
 
 // TODO: Implement Future trait for YieldOnce
@@ -64,7 +67,7 @@ impl Future for YieldOnce {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.yielded == false {
+        if !self.yielded {
             self.get_mut().yielded = true;
             cx.waker().wake_by_ref();
             Poll::Pending

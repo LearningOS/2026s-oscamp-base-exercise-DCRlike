@@ -8,7 +8,6 @@
 //! - The first completed branch is executed, others are cancelled
 
 use std::future::Future;
-use tokio;
 use tokio::time::{sleep, Duration};
 
 /// Async operation with timeout.
