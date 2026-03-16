@@ -44,7 +44,6 @@ struct FreeBlock {
     size: usize,
     next: *mut FreeBlock,
 }
-
 pub struct FreeListAllocator {
     heap_start: usize,
     heap_end: usize,
@@ -123,7 +122,7 @@ unsafe impl GlobalAlloc for FreeListAllocator {
         let mut curr = self.free_list_head();
         while !curr.is_null() {
             let addr = curr as usize;
-            let fits_align = addr % align == 0;
+            let fits_align = addr.is_multiple_of(align);
             let fits_size = ((*curr).size) >= size;
 
             if fits_size && fits_align {

@@ -31,8 +31,7 @@ impl AtomicCounter {
 
     /// Atomically decrements by 1, returns the value **before** decrement.
     pub fn decrement(&self) -> u64 {
-        let ret = self.value.fetch_sub(1, Ordering::Relaxed);
-        ret
+        self.value.fetch_sub(1, Ordering::Relaxed)
     }
 
     /// Gets the current value.

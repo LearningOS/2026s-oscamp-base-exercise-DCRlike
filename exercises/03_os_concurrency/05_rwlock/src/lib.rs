@@ -65,10 +65,7 @@ impl<T> RwLock<T> {
         // TODO
         loop {
             let state = self.state.load(Ordering::Acquire);
-            if (state & WRITER_HOLDING) != 0 || (state & WRITER_WAITING) != 0 {
-                core::hint::spin_loop();
-            }
-            else if (state & READER_MASK) == READER_MASK {
+            if (state & READER_MASK) == READER_MASK {
                 core::hint::spin_loop();
             }
             if self.state.compare_exchange(state, state+1, Ordering::AcqRel, Ordering::Acquire).is_ok() {

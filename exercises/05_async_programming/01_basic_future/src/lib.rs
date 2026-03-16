@@ -54,11 +54,12 @@ impl YieldOnce {
     pub fn new() -> Self {
         Self { yielded: false }
     }
-    pub fn default() -> Self {
+}
+impl Default for YieldOnce {
+    fn default() -> Self {
         Self::new()
     }
 }
-
 // TODO: Implement Future trait for YieldOnce
 // - Output type is ()
 // - First poll: set yielded = true, wake waker, return Pending

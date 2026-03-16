@@ -109,7 +109,7 @@ pub fn pipe_through_cat(input: &str) -> String {
     child.stdout.take().expect("Failed to open stdout")
         .read_to_string(&mut output)
         .expect("Failed to read stdout");
-    
+    child.wait().expect("nothing");
     output
 }
 

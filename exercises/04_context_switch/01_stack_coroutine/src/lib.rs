@@ -107,11 +107,10 @@ pub unsafe fn switch_context(old: &mut TaskContext, new: &TaskContext) {
         "ld s9,  11*8(a1)",
         "ld s10, 12*8(a1)",
         "ld s11, 13*8(a1)",
-        // 清零 a0/a1，不把旧指针泄露到新上下文
+
         "li a0, 0",
         "li a1, 0",
 
-        // ret 跳转到 new.ra（刚刚加载进 ra 的值）
         "ret",
     )
 }

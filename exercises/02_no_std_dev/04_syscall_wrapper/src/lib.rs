@@ -134,6 +134,7 @@ pub unsafe fn syscall3(id: usize, arg0: usize, arg1: usize, arg2: usize) -> isiz
     ret
 }
 
+#[warn(clippy::missing_safety_doc)]
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 pub unsafe fn syscall3(id: usize, arg0: usize, arg1: usize, arg2: usize) -> isize {
     // TODO: Implement aarch64 syscall using core::arch::asm!
